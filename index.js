@@ -22,7 +22,7 @@ db.connect((err) => {
     console.error('❌ Error conectando a MySQL:', err);
     return;
   }
-  console.log('✅ Conectado a MySQL correctamente...');
+  console.log('✅ Conectado a MySQL correctamente en la nube...');
 });
 
 // Ruta de prueba
