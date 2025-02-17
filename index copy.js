@@ -1,21 +1,20 @@
-const express = require('express'); // Framework para manejar las rutas del backend.
+const express = require('express'); //Framework para manejar las rutas del backend.
 const mysql = require('mysql2'); // Librería para conectarnos a MySQL desde Node.js.
-const cors = require('cors'); // Permite que el frontend pueda comunicarse con el backend sin problemas de seguridad.
+const cors = require('cors'); //Permite que el frontend pueda comunicarse con el backend sin problemas de seguridad.
 const bodyParser = require('body-parser'); // Permite que Node.js pueda leer datos en formato JSON enviados desde el frontend.
-require('dotenv').config(); // Nos permite manejar variables de entorno en un archivo separado.
+require('dotenv').config(); // Nos permite manejar variables de entorno (como la configuración de la base de datos) en un archivo separado.
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// Configuración de la base de datos MySQL usando variables de entorno
+// Configuración de la base de datos MySQL
 const db = mysql.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+  host: 'localhost',
+  user: 'root',
+  password: '', // Cambia esto con tu contraseña
+  database: 'flutter_crud',
 });
-
 // Conectar a MySQL
 db.connect((err) => {
   if (err) {
@@ -30,6 +29,7 @@ app.get('/', (req, res) => {
   res.send('Servidor funcionando...');
 });
 
+// Este endpoint permite obtener todos los registros de la tabla usuarios
 // Obtener todos los usuarios
 app.get('/usuarios', (req, res) => {
   db.query('SELECT * FROM usuarios', (err, results) => {
@@ -41,6 +41,15 @@ app.get('/usuarios', (req, res) => {
   });
 });
 
+db.connect((err) => {
+  if (err) {
+    console.log('Error conectando a MySQL:', err);
+    return;
+  }
+  console.log('Conectado a MySQL...');
+});
+
+// Este endpoint permite insertar un nuevo usuario en la base de datos.
 // Agregar un usuario
 app.post('/usuarios', (req, res) => {
   const { nombre, email, telefono } = req.body;
@@ -57,6 +66,7 @@ app.post('/usuarios', (req, res) => {
   );
 });
 
+//Este endpoint permite modificar los datos de un usuario específico
 // Actualizar un usuario
 app.put('/usuarios/:id', (req, res) => {
   const { nombre, email, telefono } = req.body;
@@ -74,6 +84,7 @@ app.put('/usuarios/:id', (req, res) => {
   );
 });
 
+// Este endpoint permite eliminar un usuario según su ID.
 // Eliminar un usuario
 app.delete('/usuarios/:id', (req, res) => {
   const { id } = req.params;
@@ -86,8 +97,13 @@ app.delete('/usuarios/:id', (req, res) => {
   });
 });
 
-// Levantar servidor en el puerto de Heroku o 3000 por defecto
-const PORT = process.env.PORT || 3000;
+// Ruta de prueba
+app.get('/', (req, res) => {
+  res.send('Servidor funcionando...');
+});
+
+// Levantar servidor en el puerto 3000
+const PORT = process.env.PORT || 3000; // Usa el puerto de Heroku o 3000 por defecto
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en el puerto ${PORT}`);
+  console.log(`Servidor corriendo en el puerto ${PORT}`);
 });
