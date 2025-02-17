@@ -10,10 +10,10 @@ app.use(bodyParser.json());
 
 // Configuración de la base de datos MySQL
 const db = mysql.createConnection({
-  host: 'registropollodepelea.com',
-  user: 'u107661096_root',
-  password: 'Papote2020+', // Cambia esto con tu contraseña
-  database: 'u107661096_registrocria',
+  host: 'localhost',
+  user: 'root',
+  password: '', // Cambia esto con tu contraseña
+  database: 'flutter_crud',
 });
 
 // Este endpoint permite obtener todos los registros de la tabla usuarios
