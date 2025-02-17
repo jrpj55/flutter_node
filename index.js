@@ -9,11 +9,21 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // Configuración de la base de datos MySQL
-const db = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: '', // Cambia esto con tu contraseña
-  database: 'flutter_crud',
+//const db = mysql.createConnection({
+//  host: 'localhost',
+//  user: 'root',
+//  password: '', // Cambia esto con tu contraseña
+//  database: 'flutter_crud',
+//});
+const mysql = require('mysql');
+const connection = mysql.createConnection(process.env.JAWSDB_URL);
+
+connection.connect((err) => {
+  if (err) {
+    console.error('Error conectando a la base de datos:', err.stack);
+    return;
+  }
+  console.log('Conectado a la base de datos.');
 });
 
 // Este endpoint permite obtener todos los registros de la tabla usuarios
