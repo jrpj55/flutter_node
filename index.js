@@ -4,9 +4,20 @@ const cors = require('cors'); // Permite que el frontend pueda comunicarse con e
 const bodyParser = require('body-parser'); // Permite que Node.js pueda leer datos en formato JSON enviados desde el frontend.
 require('dotenv').config(); // Nos permite manejar variables de entorno en un archivo separado.
 
+const cloudinary = require('cloudinary').v2;
+const multer = require('multer');
+
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+const upload = multer({ dest: 'uploads/' });
 
 // Configuración de la base de datos MySQL usando variables de entorno
 const db = mysql.createConnection({
@@ -41,20 +52,56 @@ app.get('/usuarios', (req, res) => {
   });
 });
 
-// Agregar un usuario
-app.post('/usuarios', (req, res) => {
+// Agregar un usuario (ahora con foto)
+app.post('/usuarios', upload.single('foto'), (req, res) => {
   const { nombre, email, telefono } = req.body;
-  db.query(
-    'INSERT INTO usuarios (nombre, email, telefono) VALUES (?, ?, ?)',
-    [nombre, email, telefono],
-    (err, result) => {
-      if (err) {
-        res.status(500).json({ error: err.message });
-      } else {
-        res.json({ mensaje: 'Usuario agregado', id: result.insertId });
+  let fotoUrl = null;
+
+  // Si se ha enviado un archivo, subirlo a Cloudinary
+  if (req.file) {
+    cloudinary.uploader.upload(
+      req.file.path,
+      { folder: 'usuarios' },
+      (error, result) => {
+        if (error) {
+          console.error('Error al subir la imagen:', error);
+          return res.status(500).json({ error: 'Error al subir la imagen' });
+        }
+
+        // La URL segura de la imagen subida
+        fotoUrl = result.secure_url;
+
+        // Insertar el usuario en la base de datos, incluyendo la URL de la foto
+        db.query(
+          'INSERT INTO usuarios (nombre, email, telefono, foto) VALUES (?, ?, ?, ?)',
+          [nombre, email, telefono, fotoUrl],
+          (err, result) => {
+            if (err) {
+              res.status(500).json({ error: err.message });
+            } else {
+              res.json({ mensaje: 'Usuario agregado', id: result.insertId });
+            }
+          }
+        );
       }
-    }
-  );
+    );
+  } else {
+    // Si no se envía foto, se inserta sin ella
+    db.query(
+      'INSERT INTO usuarios (nombre, email, telefono, foto) VALUES (?, ?, ?, ?)',
+      [nombre, email, telefono, fotoUrl],
+      (err, result) => {
+        if (err) {
+          res.status(500).json({ error: err.message });
+        } else {
+          res.json({
+            mensaje: 'Usuario agregado sin foto',
+            id: result.insertId,
+          });
+        }
+      }
+    );
+  }
 });
 
 // Actualizar un usuario
