@@ -141,15 +141,13 @@ app.put('/usuarios/:id', upload.single('foto'), (req, res) => {
   const { nombre, email, telefono } = req.body;
   // Extrae el ID del usuario a actualizar de los parámetros de la URL.
   const { id } = req.params;
-  // Inicializa la variable fotoUrl en null; se actualizará si se sube una imagen.
-  let fotoUrl = null;
 
-  // Verifica si se ha enviado un archivo (campo 'foto').
+  // Verifica si se ha enviado un archivo en el campo 'foto'.
   if (req.file) {
-    // Sube el archivo a Cloudinary, especificando la carpeta 'usuarios' para organizar las imágenes.
+    // Si se envió una nueva foto, se sube el archivo a Cloudinary.
     cloudinary.uploader.upload(
       req.file.path, // Ruta del archivo temporal subido por multer.
-      { folder: 'usuarios' }, // Opciones: especifica la carpeta en Cloudinary.
+      { folder: 'usuarios' }, // Especifica la carpeta en Cloudinary donde se guardará la imagen.
       (error, result) => {
         // Callback que se ejecuta cuando finaliza la subida.
         if (error) {
@@ -157,19 +155,17 @@ app.put('/usuarios/:id', upload.single('foto'), (req, res) => {
           console.error('Error al subir la imagen:', error);
           return res.status(500).json({ error: 'Error al subir la imagen' });
         }
+        // Se obtiene la URL segura de la imagen subida.
+        const fotoUrl = result.secure_url;
 
-        // Obtiene la URL segura de la imagen subida desde Cloudinary.
-        fotoUrl = result.secure_url;
-
-        // Actualiza el usuario en la base de datos, incluyendo la URL de la foto.
-        // La consulta SQL debe recibir los parámetros en el orden correcto:
-        // [nombre, email, telefono, fotoUrl, id]
+        // Actualiza todos los campos del usuario, incluyendo la nueva URL de la foto.
+        // Los parámetros se pasan en el orden: [nombre, email, telefono, fotoUrl, id]
         db.query(
           'UPDATE usuarios SET nombre=?, email=?, telefono=?, foto=? WHERE id=?',
           [nombre, email, telefono, fotoUrl, id],
           (err) => {
             if (err) {
-              // Si ocurre un error al actualizar, se responde con un error 500.
+              // En caso de error al actualizar, se responde con un error 500.
               res.status(500).json({ error: err.message });
             } else {
               // Si la actualización es exitosa, se envía un mensaje de confirmación.
@@ -180,21 +176,18 @@ app.put('/usuarios/:id', upload.single('foto'), (req, res) => {
       }
     );
   } else {
-    // Si no se envía foto, actualiza el usuario sin modificar el campo 'foto'.
-    // Se pasa fotoUrl (que sigue siendo null) en el lugar correspondiente.
-    // Los parámetros se deben pasar en el mismo orden: [nombre, email, telefono, fotoUrl, id]
+    // Si no se envía una nueva foto, se actualizan solo los campos de texto.
+    // Esto evita modificar el campo "foto" y deja la imagen existente intacta.
     db.query(
-      'UPDATE usuarios SET nombre=?, email=?, telefono=?, foto=? WHERE id=?',
-      [nombre, email, telefono, fotoUrl, id],
-      (err, result) => {
+      'UPDATE usuarios SET nombre=?, email=?, telefono=? WHERE id=?',
+      [nombre, email, telefono, id],
+      (err) => {
         if (err) {
-          // En caso de error, se responde con un error 500.
+          // En caso de error en la actualización, se responde con un error 500.
           res.status(500).json({ error: err.message });
         } else {
-          // En una actualización, no existe insertId; se retorna simplemente un mensaje de éxito.
-          res.json({
-            mensaje: 'Usuario actualizado sin foto',
-          });
+          // Si la actualización es exitosa, se envía un mensaje de confirmación.
+          res.json({ mensaje: 'Usuario actualizado sin modificar la foto' });
         }
       }
     );
